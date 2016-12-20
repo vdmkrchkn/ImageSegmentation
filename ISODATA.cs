@@ -7,21 +7,55 @@ using System.Drawing;
 
 namespace GrowCut
 {
-    class ISODATA
+    class ISODATA : ISegmentAlgorithm
     {
-        public ISODATA(Cluster[] groups, List<SamplePoint> points, int k, int minNumThres, 
+        // инициализация параметров
+        ISODATA(int k, int minNumThres, 
             float std_deviationThres, float minDistanceThres, int maxMergeNumsThres, int maxIters)
-        {
-            this.groups = groups;
-            this.points = points;
-            this.dimension = points[0].Size;
-            this.k = k;
+        {                        
+            this.nClusters = k;
             this.minNumThres = minNumThres;
             this.std_deviationThres = std_deviationThres;
             this.minDistanceThres = minDistanceThres;
             this.maxMergeNumsThres = maxMergeNumsThres;
             this.maxIters = maxIters;
         }
+        //
+        public ISODATA(Bitmap bmp, int iters = 10)
+            : this(2,1,1,4,1,iters)            
+        {
+            //clusters, nTheta, sTheta, cTheta, 1, iters
+            // получение признакового пространства
+            points = new List<SamplePoint>();
+            int minARGB = int.MaxValue;
+            int maxARGB = int.MinValue;
+            int minIdx = -1, maxIdx = -1;
+            for (int x = 0; x < bmp.Width; ++x)
+                for (int y = 0; y < bmp.Height; ++y)
+                {
+                    Color clr = bmp.GetPixel(x, y);
+                    points.Add(new SamplePoint(x * bmp.Height + y, clr));
+                    if (clr.ToArgb() < minARGB)
+                    {
+                        minARGB = clr.ToArgb();
+                        minIdx = x * bmp.Height + y;
+                    }
+                    if (clr.ToArgb() > maxARGB)
+                    {
+                        maxARGB = clr.ToArgb();
+                        maxIdx = x * bmp.Height + y;
+                    }
+                }            
+            if (points.Count < nClusters)
+                throw new Exception("Размерность признакового пространства должна превосходить число кластеров");
+            dimension = points.First().Size;
+            // инициализация кластеров
+            groups = new Cluster[nClusters];
+            groups[0] = new Cluster(0, points[minIdx]);
+            groups[1] = new Cluster(1, points[maxIdx]);
+            //foreach (Cluster c in groups)
+            //    Console.WriteLine(c);
+        }        
         // преобразование из выборки в изображение Bitmap
         public void convertBitmap(ref Bitmap bmp)
         {
@@ -35,9 +69,9 @@ namespace GrowCut
                     Console.WriteLine(ae.Message + " (" + p.Index + ")");
                     return;
                 }
-        }
+        }        
         //
-        public void run()
+        public bool evolution()
         {
             for (int nIters = 1; nIters <= this.maxIters; ++nIters)
             {
@@ -53,7 +87,7 @@ namespace GrowCut
                 //   
                 if (nIters == maxIters)
                     minDistanceThres = 0.0f;   // обнуление компактности
-                else if (groups.GetLength(0) <= (this.k / 2) || (nIters % 2 == 1 && groups.GetLength(0) < 2 * this.k))
+                else if (groups.GetLength(0) <= (this.nClusters / 2) || (nIters % 2 == 1 && groups.GetLength(0) < 2 * this.nClusters))
                 {
                     // шаг 7
                     bool splitted = splitGroups();
@@ -66,7 +100,8 @@ namespace GrowCut
             Console.WriteLine("-------------------------SUCCESS----------------------------");
             assignGroups();   
             //   
-            //printGroups();   
+            //printGroups(); 
+            return true;
         }
         // определение соответствия точка-кластер
         private void assignGroups() 
@@ -239,7 +274,7 @@ namespace GrowCut
                 bool flag = false;   
                 if (maxItem > std_deviationThres) 
                 {   
-                    if (groups.GetLength(0) <= this.k / 2 || (groups[i].mDistance > totalMeanDistance && groupPoints.Count > 2 * minNumThres)) 
+                    if (groups.GetLength(0) <= this.nClusters / 2 || (groups[i].mDistance > totalMeanDistance && groupPoints.Count > 2 * minNumThres)) 
                     {   
                         //  
                         splitted = true;   
@@ -352,7 +387,7 @@ namespace GrowCut
         int dimension;              // размерность вектора признаков        
         Cluster[] groups;           // набор кластеров
         List<SamplePoint> points;   // выборка данных для кластеризации        
-        int k;                      // кол-во кластеров        
+        int nClusters;                      // кол-во кластеров        
         int minNumThres;            // порог сходимости, с которым сравнивается кол-во точек в кластере        
         float std_deviationThres;   // параметр, характеризующий среднеквадратичное отклонение        
         float minDistanceThres;     // параметр компактности кластеров        

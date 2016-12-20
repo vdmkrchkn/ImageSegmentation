@@ -29,7 +29,7 @@ namespace GrowCut
             this.segmentSeeds = new Dictionary<LABEL,List<Point>>();
             this.pNull = new Point(int.MaxValue, 0);
             this.pen = radioButton1.Checked ? Pens.Red : Pens.Blue;
-            this.radioButton4.Checked = true;            
+            this.radioButton4.Checked = true;                        
         }        
 
         private void open1_Click(object sender, EventArgs e)
@@ -73,38 +73,27 @@ namespace GrowCut
                 pictureBox1.Image.Dispose();
             pictureBox1.Image = srcImage.Clone() as Image;
             segmentSeeds.Clear();
-        }
+        }        
 
-        //Функция запускаемая из другого потока
-        void threadFuncIterative(object o)
+        // функция для дочернего потока
+        void threadFunc(object o)
         {
-            int t = 0;            
-            while (doSegmentation && (o as Automaton).evolution())
+            int t = 0;
+            while (doSegmentation && (o as ISegmentAlgorithm).evolution())
             {
-                Invoke(new RefreshImageDelegate(RefreshImage), o,true);
-                Console.WriteLine("iter: " + ++t);                
+                Invoke(new RefreshImageDelegate(RefreshImage), o as ISegmentAlgorithm);
+                Console.WriteLine("iter: " + ++t);
+                if (o is ISODATA) break;
                 //Thread.Sleep(0);
-            }
-            doSegmentation = false;
+            }            
         }
 
-        //Функция запускаемая из другого потока
-        void threadFuncAuto(object o)
-        {            
-            (o as ISODATA).run();
-            Invoke(new RefreshImageDelegate(RefreshImage), o, false);                
-            doSegmentation = false;
-        }
-
-        delegate void RefreshImageDelegate(object a, bool type);
+        delegate void RefreshImageDelegate(ISegmentAlgorithm algo);
         // Функция для делегата
-        void RefreshImage(object a, bool type = true)
+        void RefreshImage(ISegmentAlgorithm algo)
         {                        
-            Bitmap bmp = pictureBox1.Image as Bitmap;
-            if (type)
-                (a as Automaton).convertBitmap(ref bmp);
-            else
-                (a as ISODATA).convertBitmap(ref bmp);
+            Bitmap bmp = pictureBox1.Image as Bitmap;            
+            algo.convertBitmap(ref bmp);
             pictureBox1.Image = bmp;      
         }             
 
@@ -120,59 +109,19 @@ namespace GrowCut
                 MessageBox.Show("Для сегментации инициализируйте изображение.");
                 return;
             }
-            this.doSegmentation = true;
+            doSegmentation = true;
+            ISegmentAlgorithm algo = new Graph(bmp);
             if (radioButton3.Checked)
             {
-                Automaton a = new Automaton(bmp);
+                algo = new Automaton(bmp);
                 // интерактивная разметка
-                a.userAction(segmentSeeds);
-                // Создание отдельного потока для эволюции
-                calcThread = new Thread(threadFuncIterative);                
-                calcThread.Start(a); //запуск эволюции                
+                (algo as Automaton).userAction(segmentSeeds);
             }
             else
-            {
-                // получение признакового пространства
-                List<SamplePoint> samples = new List<SamplePoint>();
-                int minARGB = int.MaxValue;
-                int maxARGB = int.MinValue;
-                int minIdx = -1, maxIdx = -1;
-                for (int x = 0; x < bmp.Width; ++x)
-                    for (int y = 0; y < bmp.Height; ++y)
-                    {
-                        Color clr = bmp.GetPixel(x, y);
-                        samples.Add(new SamplePoint(x * bmp.Height + y, clr));
-                        if (clr.ToArgb() < minARGB)
-                        {
-                            minARGB = clr.ToArgb();
-                            minIdx = x * bmp.Height + y;
-                        }
-                        if (clr.ToArgb() > maxARGB)
-                        {
-                            maxARGB = clr.ToArgb();
-                            maxIdx = x * bmp.Height + y;
-                        }                        
-                    }
-                // параметры алгоритма ISODATA
-                int clusters = 2; // кол-во кластеров
-                int nTheta = 1;
-                int sTheta = 1;
-                int cTheta = 4;
-                int iters = (int)numericUpDown1.Value; // кол-во итераций                
-                if (samples.Count < clusters)
-                    throw new Exception("Размерность признакового пространства должна превосходить число кластеров");
-                // инициализация кластеров
-                Cluster[] groups = new Cluster[clusters];
-                groups[0] = new Cluster(0, samples[minIdx]);
-                groups[1] = new Cluster(1, samples[maxIdx]);
-                foreach(Cluster c in groups)                    
-                    Console.WriteLine(c);                
-                //
-                ISODATA iso = new ISODATA(groups, samples, clusters, nTheta, sTheta, cTheta, 1, iters);
-                // Создание отдельного потока процедуры
-                calcThread = new Thread(threadFuncAuto);
-                calcThread.Start(iso); //запуск                                
-            }
+                algo = new ISODATA(bmp, (int)numericUpDown1.Value);            
+            // Создание & запуск отдельного потока для эволюции
+            calcThread = new Thread(threadFunc);
+            calcThread.Start(algo);
         }
 
         private void reset1_Click(object sender, EventArgs e)
@@ -184,8 +133,7 @@ namespace GrowCut
                 pictureBox1.Image = srcImage.Clone() as Image;
                 segmentSeeds.Clear();
                 doSegmentation = false;
-                if (calcThread != null && calcThread.IsAlive)
-                    //while (GrowCutThread != null && GrowCutThread.IsAlive)
+                if (calcThread != null && calcThread.IsAlive)                    
                     calcThread.Abort();
             }
             catch
@@ -244,7 +192,7 @@ namespace GrowCut
 
         private void button1_Click(object sender, EventArgs e)
         {
-            this.doSegmentation = false;
+            doSegmentation = false;
         }
 
         private void radioButton4_CheckedChanged(object sender, EventArgs e)

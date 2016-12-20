@@ -7,7 +7,7 @@ using System.Drawing;
 
 namespace GrowCut
 {
-    enum LABEL { NONE, OBJECT, BACKGROUND };
+    public enum LABEL { NONE, OBJECT, BACKGROUND };
     // тип клетка
     struct Cell
     {
@@ -31,7 +31,7 @@ namespace GrowCut
         public Color clr;      // цвет        
     }
 
-    class Automaton
+    class Automaton : ISegmentAlgorithm
     {
         public Automaton(Bitmap bmp)
         {
@@ -46,15 +46,15 @@ namespace GrowCut
                     //if(h - 1  > y && y > 0  && w - 1 > x && x > 0)                        
                 }
             this.maxColorNorma = colorLength(Color.White); // max{||C||_2}
-        }
-
+        }        
+        // маркировка выбранных клеток
         public void userAction(Dictionary<LABEL, List<Point>> seed)
         {
             foreach (var pair in seed)            
                 foreach (var pt in pair.Value)
                     this.states[pt.X, pt.Y].mark(pair.Key, 1);                        
-        }
-        // алгоритм перехода к новому состоянию. Возвращает false, если изменений не произошло
+        }        
+        //
         public bool evolution()
         {
             bool isChanged = false;
