@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Drawing;
+﻿using System.Drawing;
 
-namespace GrowCut
+namespace Segmentation
 {
     public interface ISegmentAlgorithm
     {                
@@ -16,5 +11,29 @@ namespace GrowCut
         /// </summary>
         /// <returns>произошло ли изменение</returns>
         bool evolution();
+    }
+
+    public class SegmentAlgorithmClient
+    {
+        /// <summary>
+        /// Контекст стратегии
+        /// </summary>
+        public ISegmentAlgorithm iSegAlgo { get; set; }
+
+        public SegmentAlgorithmClient(ISegmentAlgorithm iSegAlgo)
+        {
+            this.iSegAlgo = iSegAlgo;
+        }
+#region Операции
+        public void convertBitmap(ref Bitmap bmp)
+        {
+            iSegAlgo.convertBitmap(ref bmp);
+        }
+
+        public bool evolution()
+        {
+            return iSegAlgo.evolution();
+        }
+#endregion
     }
 }

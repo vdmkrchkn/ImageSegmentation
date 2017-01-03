@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 using System.IO;
 using System.Threading;
 
-namespace GrowCut
+namespace Segmentation
 {
     public partial class Form1 : Form
     {
@@ -19,7 +13,7 @@ namespace GrowCut
         Image srcImage;
         Dictionary<LABEL,List<Point>> segmentSeeds;
         Point pStart, pCur, pNull;
-        bool doSegmentation;
+        public bool DoSegmentation { get; private set; }
         Thread calcThread;
      
         public Form1()
@@ -78,19 +72,20 @@ namespace GrowCut
         // функция для дочернего потока
         void threadFunc(object o)
         {
+            var algo = o as SegmentAlgorithmClient;
             int t = 0;
-            while (doSegmentation && (o as ISegmentAlgorithm).evolution())
+            while (DoSegmentation && algo.evolution())
             {
-                Invoke(new RefreshImageDelegate(RefreshImage), o as ISegmentAlgorithm);
+                Invoke(new RefreshImageDelegate(RefreshImage), algo);
                 Console.WriteLine("iter: " + ++t);
-                if (o is ISODATA) break;
-                //Thread.Sleep(0);
+                if (algo.iSegAlgo is ISODATA || algo.iSegAlgo is Graph) break;
+                Thread.Sleep(0);
             }            
         }
 
-        delegate void RefreshImageDelegate(ISegmentAlgorithm algo);
+        delegate void RefreshImageDelegate(SegmentAlgorithmClient algo);
         // Функция для делегата
-        void RefreshImage(ISegmentAlgorithm algo)
+        void RefreshImage(SegmentAlgorithmClient algo)
         {                        
             Bitmap bmp = pictureBox1.Image as Bitmap;            
             algo.convertBitmap(ref bmp);
@@ -109,16 +104,16 @@ namespace GrowCut
                 MessageBox.Show("Для сегментации инициализируйте изображение.");
                 return;
             }
-            doSegmentation = true;
-            ISegmentAlgorithm algo = new Graph(bmp);
+            DoSegmentation = true;
+            SegmentAlgorithmClient algo = new SegmentAlgorithmClient(new Graph(bmp));
             if (radioButton3.Checked)
             {
-                algo = new Automaton(bmp);
+                algo.iSegAlgo = new Automaton(bmp);
                 // интерактивная разметка
-                (algo as Automaton).userAction(segmentSeeds);
+                (algo.iSegAlgo as Automaton).userAction(segmentSeeds);
             }
             else
-                algo = new ISODATA(bmp, (int)numericUpDown1.Value);            
+                algo.iSegAlgo = new ISODATA(bmp, (int)numericUpDown1.Value);            
             // Создание & запуск отдельного потока для эволюции
             calcThread = new Thread(threadFunc);
             calcThread.Start(algo);
@@ -132,7 +127,7 @@ namespace GrowCut
                     pictureBox1.Image.Dispose();                
                 pictureBox1.Image = srcImage.Clone() as Image;
                 segmentSeeds.Clear();
-                doSegmentation = false;
+                DoSegmentation = false;
                 if (calcThread != null && calcThread.IsAlive)                    
                     calcThread.Abort();
             }
@@ -192,7 +187,7 @@ namespace GrowCut
 
         private void button1_Click(object sender, EventArgs e)
         {
-            doSegmentation = false;
+            DoSegmentation = false;
         }
 
         private void radioButton4_CheckedChanged(object sender, EventArgs e)

@@ -1,4 +1,4 @@
-﻿namespace GrowCut
+﻿namespace Segmentation
 {
     partial class Form1
     {
