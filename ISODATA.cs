@@ -12,8 +12,8 @@ namespace Segmentation
         // инициализация параметров
         ISODATA(int k, int minNumThres, 
             float std_deviationThres, float minDistanceThres, int maxMergeNumsThres, int maxIters)
-        {                        
-            this.nClusters = k;
+        {
+            nClusters = k;
             this.minNumThres = minNumThres;
             this.std_deviationThres = std_deviationThres;
             this.minDistanceThres = minDistanceThres;
@@ -23,12 +23,11 @@ namespace Segmentation
         //
         public ISODATA(Bitmap bmp, int iters = 10)
             : this(2,1,1,4,1,iters)            
-        {
-            //clusters, nTheta, sTheta, cTheta, 1, iters
+        {            
             // получение признакового пространства
             points = new List<SamplePoint>();
-            int minARGB = int.MaxValue;
-            int maxARGB = int.MinValue;
+            int minARGB = int.MaxValue,
+                maxARGB = int.MinValue;
             int minIdx = -1, maxIdx = -1;
             for (int x = 0; x < bmp.Width; ++x)
                 for (int y = 0; y < bmp.Height; ++y)
@@ -62,11 +61,12 @@ namespace Segmentation
             foreach (SamplePoint p in this.points)
                 try
                 {                    
-                    bmp.SetPixel(p.Index / bmp.Height, p.Index % bmp.Height, p.Cluster == 0 ? Automaton.toGrayLevel(p.Color) : p.Color);
+                    bmp.SetPixel(p.Index / bmp.Height, p.Index % bmp.Height,
+                        p.Cluster == 0 ? Automaton.toGrayLevel(p.Color) : p.Color);
                 }
                 catch (ArgumentException ae)
                 {
-                    Console.WriteLine(ae.Message + " (" + p.Index + ")");
+                    Console.WriteLine($"{ae.Message}: {p.Index}");
                     return;
                 }
         }        
@@ -75,10 +75,12 @@ namespace Segmentation
         {
             for (int nIters = 1; nIters <= this.maxIters; ++nIters)
             {
-                Console.WriteLine("--------Итерация №-" + nIters + "-------");
+                Console.WriteLine(string.Join(new string('-', 1 << 3),
+                                              new string[] { "", $"Итерация #{nIters}", "" }));
+                    //$"{new string('-', 1 << 3)} Итерация #{nIters} {new string('-', 1 << 3)}");
                 // шаг 1
                 assignGroups();
-                //   
+                //                
                 //printGroups();
                 // шаг 2  
                 purgeGroups();
@@ -97,7 +99,7 @@ namespace Segmentation
                 // процедура слияния кластеров                     
                 mergeGroups();                
             }
-            Console.WriteLine("-------------------------SUCCESS----------------------------");
+            Console.WriteLine($"{new string('-', 1 << 4)}SUCCESS{new string('-', 1 << 4)}");
             assignGroups();   
             //   
             //printGroups(); 
@@ -122,10 +124,9 @@ namespace Segmentation
                         nearest = i;   
                     }
                 }
-                //Console.WriteLine(p + " ==> " + groups[nearest] + ", d = " + minDistance);  
+                //Console.WriteLine($"{p} ==> {groups[nearest]}, d = {Math.Round(minDistance,3)}");  
                 p.Cluster = nearest;  
-            }
-            //
+            }            
         }
         // удаление кластеров, размер которых не соответствует порогу сходимости
         private void purgeGroups() 
@@ -141,7 +142,7 @@ namespace Segmentation
                     eligibleGroups.Add(groups[i]);   
                 else 
                 {   
-                    Console.WriteLine("Удаление кластера" + groups[i]);   
+                    Console.WriteLine($"Удаление кластера {groups[i]}");   
                     // для всех точек удаляемого кластера
                     foreach(SamplePoint point in groupPoints)   
                         point.Cluster = -1; // ставим недопустимый # кластера
@@ -166,7 +167,7 @@ namespace Segmentation
         // определение соответствия кластер-набор точек
         private Dictionary<int, List<SamplePoint>> getMapGroup2Samples() 
         {   
-            Dictionary<int, List<SamplePoint>> mapGroup2Samples = new Dictionary<int, List<SamplePoint>>();   
+            var mapGroup2Samples = new Dictionary<int, List<SamplePoint>>();   
             foreach(SamplePoint point in this.points) 
             {
                 if(mapGroup2Samples.ContainsKey(point.Cluster))
@@ -184,7 +185,7 @@ namespace Segmentation
         private void updateMeans() 
         {
             Console.WriteLine("шаг 3");
-            //StringBuffer sbuf = new StringBuffer("ёьРВѕЫАаµДѕщЦµµгОЄЈє");      
+            //StringBuilder sbuf = new StringBuilder("ёьрвѕыааµдѕщцµµгоєјє");
             int pointCount = 0;   
             double totalDistance = 0.0f;      
             //   
@@ -202,8 +203,7 @@ namespace Segmentation
                         for (int j = 0; j < this.dimension; j++) {   
                             values[j] += vv[j];   
                         }   
-                    }   
-   
+                    }      
                     //   
                     for (int j = 0; j < this.dimension; j++) {   
                         values[j] /= groupPoints.Count;   
@@ -219,15 +219,14 @@ namespace Segmentation
                         groupDistance += SamplePoint.distance(point, meanPoint);                          
                     double meanDistance = groupDistance / groupPoints.Count;   
                     groups[i].mDistance = meanDistance;      
-                    //sbuf.append(groups[i] + ", АаДЪЖЅѕщѕаАл(" + meanDistance + "), ");      
+                    //sbuf.Append(groups[i] + ", АаДЪЖЅѕщѕаАл(" + meanDistance + "), ");      
                     pointCount += groupPoints.Count;   
                     totalDistance += groupDistance;   
                 }   
-            }   
-   
-            //System.out.println(sbuf.toString());   
-            totalMeanDistance = (pointCount != 0) ? totalDistance / pointCount : 0.0;   
-            //System.out.println("ЧЬЖЅѕщѕаАл = " + totalMeanDistance);   
+            }
+            //Console.WriteLine(sbuf.ToString());   
+            totalMeanDistance = (pointCount != 0) ? totalDistance / pointCount : 0.0;
+            //Console.WriteLine($"ЧЬЖЅѕщѕаАл = {totalMeanDistance}");   
         }
         //
         private bool splitGroups()
@@ -387,7 +386,7 @@ namespace Segmentation
         int dimension;              // размерность вектора признаков        
         Cluster[] groups;           // набор кластеров
         List<SamplePoint> points;   // выборка данных для кластеризации        
-        int nClusters;                      // кол-во кластеров        
+        int nClusters;              // кол-во кластеров        
         int minNumThres;            // порог сходимости, с которым сравнивается кол-во точек в кластере        
         float std_deviationThres;   // параметр, характеризующий среднеквадратичное отклонение        
         float minDistanceThres;     // параметр компактности кластеров        
@@ -400,36 +399,17 @@ namespace Segmentation
     {
         public Cluster(int number, SamplePoint center)
         {
-            this.number = number;
-            this.center = center;
+            Number = number;
+            Center = center;
         }
 
-        public SamplePoint Center
-        {
-            get { return this.center; }
-            set { this.center = value; }
-        }        
+        public SamplePoint Center { get; set; }             
 
-        public int Number
-        {
-            get { return this.number; }
-            set { this.number = value; }
-        }        
+        public int Number { get; set; }               
 
-        public double mDistance
-        {
-            get { return meanDistance; }
-            set { this.meanDistance = value; }
-        }        
+        public double mDistance { get; set; }        
 
-        public override string ToString()
-        {
-            return "Cluster " + number + " : c = " + center;            
-        }
-
-        int number;         // номер
-        SamplePoint center; // центр
-        double meanDistance; // хз
+        public override string ToString() => $"Cluster {Number}: c = {Center}";                
     }
 
     class ClusterDistance : IComparable<ClusterDistance> 
@@ -459,68 +439,32 @@ namespace Segmentation
     {                    
         public SamplePoint(int index, float[] values) 
         {   
-            this.index = index;   
-            this.values = values;   
+            Index = index;   
+            Values = values;   
         }
 
         public SamplePoint(int index, Color clr)
-        {
-            this.index = index;
-            this.values = new float[] { clr.R, clr.G, clr.B };
-        }
+            : this(index, new float[] { clr.R, clr.G, clr.B }) {}
 
-        public int Cluster 
-        {
-            get { return this.clusterIdx; }
-            set { this.clusterIdx = value; }
-        }              
+        public int Cluster { get; set; }                    
    
-        public int Index
-        {
-            get { return index; }
-            set { this.index = value; }
-        }              
-   
-        public float[] Values
-        {
-            get { return this.values; }
-            set { this.values = value; }
-        }              
+        public int Index { get; set; }
+        // вектор признаков
+        public float[] Values { get; set; }                     
    
         public int Size
         {
-            get { return values.GetLength(0); }
+            get { return Values.GetLength(0); }
         }
 
         public Color Color
-        {
-            get { return Color.FromArgb((int)values[0], (int)values[1], (int)values[2]); }
+        {            
+            get { return Color.FromArgb((int)Values[0], (int)Values[1], (int)Values[2]); }
         }
               
-        public override string ToString() {   
-            string sbuf = "x" + index + " (";              
-            for (int i = 0; i < Size; i++) 
-            {   
-                sbuf += values[i];   
-                if (i != Size - 1)   
-                    sbuf += ", "; 
-            }
-            sbuf += ")";   
-            return sbuf;
-        }   
+        public override string ToString() => $"x{Index}: ({string.Join(", ", Values)})";        
    
-        public static double distance(SamplePoint dp1, SamplePoint dp2)
-        {               
-            float[] values1 = dp1.Values;   
-            float[] values2 = dp2.Values;
-            double result = 0;   
-            for (int i = 0; i < dp1.Size; i++)
-                result += Math.Pow(Math.Abs(values1[i] - values2[i]),2);            
-            return Math.Sqrt(result);   
-        }   
-        
-        int index;      
-        float[] values; // вектор признаков   
-        int clusterIdx;
+        public static double distance(SamplePoint pa, SamplePoint pb) 
+            => Automaton.colorDistance(pa.Color, pb.Color);                                         
     }   
 }

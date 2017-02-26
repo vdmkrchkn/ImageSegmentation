@@ -44,18 +44,18 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.radioButton2 = new System.Windows.Forms.RadioButton();
             this.radioButton1 = new System.Windows.Forms.RadioButton();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.radioButton4 = new System.Windows.Forms.RadioButton();
-            this.radioButton3 = new System.Windows.Forms.RadioButton();
+            this.methodGroupBox = new System.Windows.Forms.GroupBox();
+            this.autoRadioButton = new System.Windows.Forms.RadioButton();
+            this.activeRadioButton = new System.Windows.Forms.RadioButton();
             this.button1 = new System.Windows.Forms.Button();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
+            this.label1 = new System.Windows.Forms.Label();
             this.menuStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.groupBox1.SuspendLayout();
-            this.groupBox2.SuspendLayout();
+            this.methodGroupBox.SuspendLayout();
             this.groupBox3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.SuspendLayout();
@@ -194,38 +194,38 @@
             this.radioButton1.UseVisualStyleBackColor = true;
             this.radioButton1.CheckedChanged += new System.EventHandler(this.radioButton1_CheckedChanged);
             // 
-            // groupBox2
+            // methodGroupBox
             // 
-            this.groupBox2.Controls.Add(this.radioButton4);
-            this.groupBox2.Controls.Add(this.radioButton3);
-            this.groupBox2.Location = new System.Drawing.Point(12, 513);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(85, 66);
-            this.groupBox2.TabIndex = 8;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "Mode";
+            this.methodGroupBox.Controls.Add(this.autoRadioButton);
+            this.methodGroupBox.Controls.Add(this.activeRadioButton);
+            this.methodGroupBox.Location = new System.Drawing.Point(12, 513);
+            this.methodGroupBox.Name = "methodGroupBox";
+            this.methodGroupBox.Size = new System.Drawing.Size(85, 66);
+            this.methodGroupBox.TabIndex = 8;
+            this.methodGroupBox.TabStop = false;
+            this.methodGroupBox.Text = "Mode";
             // 
-            // radioButton4
+            // autoRadioButton
             // 
-            this.radioButton4.AutoSize = true;
-            this.radioButton4.Location = new System.Drawing.Point(6, 43);
-            this.radioButton4.Name = "radioButton4";
-            this.radioButton4.Size = new System.Drawing.Size(47, 17);
-            this.radioButton4.TabIndex = 0;
-            this.radioButton4.Text = "Auto";
-            this.radioButton4.UseVisualStyleBackColor = true;
-            this.radioButton4.CheckedChanged += new System.EventHandler(this.radioButton4_CheckedChanged);
+            this.autoRadioButton.AutoSize = true;
+            this.autoRadioButton.Location = new System.Drawing.Point(6, 43);
+            this.autoRadioButton.Name = "autoRadioButton";
+            this.autoRadioButton.Size = new System.Drawing.Size(47, 17);
+            this.autoRadioButton.TabIndex = 0;
+            this.autoRadioButton.Text = "Auto";
+            this.autoRadioButton.UseVisualStyleBackColor = true;
+            this.autoRadioButton.CheckedChanged += new System.EventHandler(this.radioButton4_CheckedChanged);
             // 
-            // radioButton3
+            // activeRadioButton
             // 
-            this.radioButton3.AutoSize = true;
-            this.radioButton3.Location = new System.Drawing.Point(7, 20);
-            this.radioButton3.Name = "radioButton3";
-            this.radioButton3.Size = new System.Drawing.Size(75, 17);
-            this.radioButton3.TabIndex = 0;
-            this.radioButton3.Text = "Interactive";
-            this.radioButton3.UseVisualStyleBackColor = true;
-            this.radioButton3.CheckedChanged += new System.EventHandler(this.radioButton3_CheckedChanged);
+            this.activeRadioButton.AutoSize = true;
+            this.activeRadioButton.Location = new System.Drawing.Point(7, 20);
+            this.activeRadioButton.Name = "activeRadioButton";
+            this.activeRadioButton.Size = new System.Drawing.Size(75, 17);
+            this.activeRadioButton.TabIndex = 0;
+            this.activeRadioButton.Text = "Interactive";
+            this.activeRadioButton.UseVisualStyleBackColor = true;
+            this.activeRadioButton.CheckedChanged += new System.EventHandler(this.radioButton3_CheckedChanged);
             // 
             // button1
             // 
@@ -252,15 +252,6 @@
             this.groupBox3.Text = "Params";
             this.groupBox3.Visible = false;
             // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(7, 19);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(50, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Iterations";
-            // 
             // numericUpDown1
             // 
             this.numericUpDown1.Location = new System.Drawing.Point(63, 16);
@@ -278,6 +269,15 @@
             0,
             0});
             // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(7, 19);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(50, 13);
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Iterations";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -285,7 +285,7 @@
             this.ClientSize = new System.Drawing.Size(641, 586);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.button1);
-            this.Controls.Add(this.groupBox2);
+            this.Controls.Add(this.methodGroupBox);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.menuStrip1);
@@ -302,8 +302,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
+            this.methodGroupBox.ResumeLayout(false);
+            this.methodGroupBox.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
@@ -330,9 +330,9 @@
         private System.Windows.Forms.RadioButton radioButton2;
         private System.Windows.Forms.RadioButton radioButton1;
         private System.Windows.Forms.ToolStripMenuItem reset1;
-        private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.RadioButton radioButton4;
-        private System.Windows.Forms.RadioButton radioButton3;
+        private System.Windows.Forms.GroupBox methodGroupBox;
+        private System.Windows.Forms.RadioButton autoRadioButton;
+        private System.Windows.Forms.RadioButton activeRadioButton;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.NumericUpDown numericUpDown1;

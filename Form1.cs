@@ -20,10 +20,10 @@ namespace Segmentation
         {
             InitializeComponent();
             openFileDialog1.InitialDirectory = saveFileDialog1.InitialDirectory = Directory.GetCurrentDirectory();
-            this.segmentSeeds = new Dictionary<LABEL,List<Point>>();
-            this.pNull = new Point(int.MaxValue, 0);
-            this.pen = radioButton1.Checked ? Pens.Red : Pens.Blue;
-            this.radioButton4.Checked = true;                        
+            segmentSeeds = new Dictionary<LABEL,List<Point>>();
+            pNull = new Point(int.MaxValue, 0);
+            pen = radioButton1.Checked ? Pens.Red : Pens.Blue;
+            autoRadioButton.Checked = true;                        
         }        
 
         private void open1_Click(object sender, EventArgs e)
@@ -41,12 +41,12 @@ namespace Segmentation
                 }
                 catch
                 {
-                    MessageBox.Show("File " + s + " has a wrong format", "Error");
+                    MessageBox.Show($"File {s} has a wrong format", "Error");
                     return;
                 }
-                Text = "Image segmentation - " + Path.GetFileNameWithoutExtension(s);
+                openFileDialog1.FileName = string.Empty;
                 saveFileDialog1.FileName = Path.GetFileNameWithoutExtension(s);
-                openFileDialog1.FileName = "";
+                Text = $"Image segmentation - {saveFileDialog1.FileName}";                                
                 segmentSeeds.Clear();
             }
         }
@@ -58,17 +58,14 @@ namespace Segmentation
 
         private void new1_Click(object sender, EventArgs e)
         {
-            saveFileDialog1.FileName = "";
+            saveFileDialog1.FileName = string.Empty;
             srcImage = new Bitmap(pictureBox1.ClientSize.Width, pictureBox1.ClientSize.Height);
-            Graphics g = Graphics.FromImage(srcImage);
-            g.Clear(Color.White);
-            g.Dispose();
-            if (pictureBox1.Image != null)
-                pictureBox1.Image.Dispose();
+            using (Graphics g = Graphics.FromImage(srcImage))                            
+                g.Clear(Color.White);            
+            pictureBox1.Image?.Dispose();
             pictureBox1.Image = srcImage.Clone() as Image;
             segmentSeeds.Clear();
         }        
-
         // функция для дочернего потока
         void threadFunc(object o)
         {
@@ -106,7 +103,7 @@ namespace Segmentation
             }
             DoSegmentation = true;
             SegmentAlgorithmClient algo = new SegmentAlgorithmClient(new Graph(bmp));
-            if (radioButton3.Checked)
+            if (activeRadioButton.Checked)
             {
                 algo.iSegAlgo = new Automaton(bmp);
                 // интерактивная разметка
@@ -122,14 +119,13 @@ namespace Segmentation
         private void reset1_Click(object sender, EventArgs e)
         {           
             try
-            {
-                if (pictureBox1.Image != null)
-                    pictureBox1.Image.Dispose();                
+            {                
+                pictureBox1.Image?.Dispose();                
                 pictureBox1.Image = srcImage.Clone() as Image;
                 segmentSeeds.Clear();
                 DoSegmentation = false;
                 if (calcThread != null && calcThread.IsAlive)                    
-                    calcThread.Abort();
+                    calcThread.Abort();                
             }
             catch
             {
@@ -160,9 +156,8 @@ namespace Segmentation
             {
                 try
                 {
-                    Graphics g = Graphics.FromImage(pictureBox1.Image);
-                    g.DrawLine(pen, pCur, e.Location);
-                    g.Dispose();
+                    using (Graphics g = Graphics.FromImage(pictureBox1.Image))                    
+                        g.DrawLine(pen, pCur, e.Location);                    
                     pictureBox1.Invalidate();
                     pCur = e.Location;
                     if (pictureBox1.Image.Size.Width > pCur.X && pCur.X >= 0 && pictureBox1.Image.Size.Height > pCur.Y && pCur.Y >= 0)                        
@@ -177,12 +172,12 @@ namespace Segmentation
 
         private void radioButton1_CheckedChanged(object sender, EventArgs e)
         {
-            this.pen = sender == radioButton1 ? Pens.Red : Pens.Blue;            
+            pen = sender == radioButton1 ? Pens.Red : Pens.Blue;            
         }        
 
         private void radioButton3_CheckedChanged(object sender, EventArgs e)
         {
-            this.groupBox1.Visible = !this.groupBox1.Visible;            
+            groupBox1.Visible = !groupBox1.Visible;            
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -192,7 +187,7 @@ namespace Segmentation
 
         private void radioButton4_CheckedChanged(object sender, EventArgs e)
         {
-            this.groupBox3.Visible = !this.groupBox3.Visible;
+            groupBox3.Visible = !groupBox3.Visible;
         }       
     }
 }

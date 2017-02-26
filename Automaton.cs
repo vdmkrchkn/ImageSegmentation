@@ -32,14 +32,14 @@ namespace Segmentation
     {
         public Automaton(Bitmap bmp)
         {
-            int w = bmp.Width;
-            int h = bmp.Height;
+            int w = bmp.Width, h = bmp.Height;
             this.states = new Cell[w, h];
             // начальное состояние клеток
             for (int x = 0; x < w; ++x)
                 for (int y = 0; y < h; ++y)                
                 {
-                    this.states[x, y] = new Cell(new Point(x, y), bmp.GetPixel(x, y));  // инициализация S
+                    // инициализация S
+                    this.states[x, y] = new Cell(new Point(x, y), bmp.GetPixel(x, y));
                     //if(h - 1  > y && y > 0  && w - 1 > x && x > 0)                        
                 }
             this.maxColorNorma = colorLength(Color.White); // max{||C||_2}
@@ -77,14 +77,16 @@ namespace Segmentation
         // преобразование из клеток в изображение Bitmap
         public void convertBitmap(ref Bitmap bmp)
         {
-            foreach (Cell p in this.states)                
+            foreach (Cell cell in states)                
                 try
                 {
-                    bmp.SetPixel(p.pt.X, p.pt.Y, p.l == LABEL.BACKGROUND ? toGrayLevel(p.clr) : p.l == LABEL.NONE ? Color.White : p.clr);
+                    bmp.SetPixel(cell.pt.X, cell.pt.Y,
+                        cell.l == LABEL.BACKGROUND ? toGrayLevel(cell.clr) :
+                            cell.l == LABEL.NONE ? Color.White : cell.clr);
                 }
                 catch (ArgumentException ae)
                 {
-                    Console.WriteLine(ae.Message + " (" + p.pt.X + "," + p.pt.Y + ")");
+                    Console.WriteLine($"{ae.Message}: {cell.pt}");
                     return;
                 }
         }
@@ -103,9 +105,14 @@ namespace Segmentation
         {
             return Color.FromArgb((int)Math.Round(.3 * c.R), (int)Math.Round(.59 * c.G), (int)Math.Round(.11 * c.B));
         }
-        // возвращает массив "соседей" cell: is8connected==FALSE - окрестность фон Неймана,TRUE - окрестность Мура
+        /// <summary>
+        /// получение "соседей" клетки
+        /// </summary>
+        /// <param name="cell">рассматриваемая клетка</param>
+        /// <param name="is8connected">вид окрестности: false - фон Неймана, true - Мура</param>
+        /// <returns>массив соседей</returns>
         List<Cell> getNeighbors(Cell cell, bool is8connected = true)
-        {            
+        {                        
             List<Cell> neighbors = new List<Cell>();  // мн-во "соседей"
             //if (cell.X == 0) // клетка у левой границы
             //{
