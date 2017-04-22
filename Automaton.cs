@@ -14,10 +14,10 @@ namespace Segmentation
             pt = p;
             l = LABEL.NONE;
             theta = 0;
-            clr = c;            
-        }        
+            clr = c;
+        }
         // маркировка клетки
-        public void mark(LABEL label,double strength)
+        public void mark(LABEL label, double strength)
         {
             l = label;
             theta = strength;
@@ -28,6 +28,8 @@ namespace Segmentation
         public double theta;   // сила in [0,1]
         public Color clr;      // цвет        
     }
+
+    internal enum PixelNeighborhood { NEUMANN, MOORE };
 
     class Automaton : ISegmentAlgorithm
     {
@@ -42,8 +44,7 @@ namespace Segmentation
                     // инициализация S
                     states[x, y] = new Cell(new Point(x, y), bmp.GetPixel(x, y));
                     //if(h - 1  > y && y > 0  && w - 1 > x && x > 0)                        
-                }
-            maxColorNorma = colorLength(Color.White); // max{||C||_2}
+                }            
         }        
         // маркировка выбранных клеток
         public void userAction(Dictionary<LABEL, List<Point>> seed)
@@ -56,7 +57,8 @@ namespace Segmentation
         public bool evolution()
         {
             bool isChanged = false;
-            Cell[,] statesNext = new Cell[states.GetLength(0), states.GetLength(1)];            
+            Cell[,] statesNext = new Cell[states.GetLength(0), states.GetLength(1)];
+            double maxColorNorma = Color.White.Length(); // max{||C||_2}          
             for (int x = 1; x < states.GetLength(0) - 1; ++x)
                 for (int y = 1; y < states.GetLength(1) - 1; ++y) 
                 {
@@ -64,7 +66,7 @@ namespace Segmentation
                     statesNext[x, y] = p;                    
                     foreach(Cell q in getNeighbors(p))
                     {
-                        double g = 1 - colorDistance(p.clr, q.clr) / maxColorNorma;
+                        double g = 1 - p.clr.Distance(q.clr) / maxColorNorma;
                         if (g * q.theta > p.theta)
                         {
                             statesNext[x, y].mark(q.l,g * q.theta);
@@ -82,7 +84,7 @@ namespace Segmentation
                 try
                 {
                     bmp.SetPixel(cell.pt.X, cell.pt.Y,
-                        cell.l == LABEL.BACKGROUND ? toGrayLevel(cell.clr) :
+                        cell.l == LABEL.BACKGROUND ? cell.clr.toGrayLevel() :
                             cell.l == LABEL.NONE ? Color.White : cell.clr);
                 }
                 catch (ArgumentException ae)
@@ -91,30 +93,16 @@ namespace Segmentation
                     return;
                 }
         }
-
-        public static double colorDistance(Color p, Color q)
-        {
-            return Sqrt(Pow(Abs(p.R - q.R), 2) + Pow(Abs(p.G - q.G), 2) + Pow(Abs(p.B - q.B), 2));
-        }
-
-        public static double colorLength(Color p)
-        {
-            return Sqrt(Pow(Abs(p.R), 2) + Pow(Abs(p.G), 2) + Pow(Abs(p.B), 2));
-        }
-        // преобразование цветного в полутоновое
-        public static Color toGrayLevel(Color c)
-        {
-            return Color.FromArgb((int)Round(.3 * c.R), (int)Round(.59 * c.G), (int)Round(.11 * c.B));
-        }
         /// <summary>
-        /// получение "соседей" клетки
+        ///     получение окрестность клетки
         /// </summary>
-        /// <param name="cell">рассматриваемая клетка</param>
-        /// <param name="is8connected">вид окрестности: false - фон Неймана, true - Мура</param>
-        /// <returns>массив соседей</returns>
-        List<Cell> getNeighbors(Cell cell, bool is8connected = true)
+        /// <param name="cell">клетка, для которой необходимо получить окрестность</param>
+        /// <param name="neighborhood">вид окрестности</param>
+        /// <returns>набор смежных клеток</returns>
+        IList<Cell> getNeighbors(Cell cell,
+            PixelNeighborhood neighborhood = PixelNeighborhood.MOORE)
         {                        
-            List<Cell> neighbors = new List<Cell>();  // мн-во "соседей"
+            IList<Cell> neighborhoods = new List<Cell>();  // мн-во "соседей"
             //if (cell.X == 0) // клетка у левой границы
             //{
             //    this.neighbors.Add(states[cell.X, cell.Y + 1]);
@@ -127,24 +115,23 @@ namespace Segmentation
             //    }                
             //}
             // горизонтальные
-            neighbors.Add(states[cell.pt.X - 1, cell.pt.Y]);
-            neighbors.Add(states[cell.pt.X + 1, cell.pt.Y]);
+            neighborhoods.Add(states[cell.pt.X - 1, cell.pt.Y]);
+            neighborhoods.Add(states[cell.pt.X + 1, cell.pt.Y]);
             // вертикальные
-            neighbors.Add(states[cell.pt.X, cell.pt.Y - 1]);
-            neighbors.Add(states[cell.pt.X, cell.pt.Y + 1]);
-            if (is8connected)
+            neighborhoods.Add(states[cell.pt.X, cell.pt.Y - 1]);
+            neighborhoods.Add(states[cell.pt.X, cell.pt.Y + 1]);
+            if (neighborhood == PixelNeighborhood.MOORE)
             {
                 // левые диагональные
-                neighbors.Add(states[cell.pt.X - 1, cell.pt.Y - 1]);
-                neighbors.Add(states[cell.pt.X - 1, cell.pt.Y + 1]);
+                neighborhoods.Add(states[cell.pt.X - 1, cell.pt.Y - 1]);
+                neighborhoods.Add(states[cell.pt.X - 1, cell.pt.Y + 1]);
                 // правые диагональные
-                neighbors.Add(states[cell.pt.X + 1, cell.pt.Y - 1]);
-                neighbors.Add(states[cell.pt.X + 1, cell.pt.Y + 1]);
+                neighborhoods.Add(states[cell.pt.X + 1, cell.pt.Y - 1]);
+                neighborhoods.Add(states[cell.pt.X + 1, cell.pt.Y + 1]);
             }
-            return neighbors;
+            return neighborhoods;
         }
-
-        Cell[,] states;
-        double maxColorNorma;
+        //
+        Cell[,] states;        
     }
 }

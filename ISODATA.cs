@@ -52,11 +52,11 @@ namespace Segmentation
         // преобразование из выборки в изображение Bitmap
         public void convertBitmap(ref Bitmap bmp)
         {
-            foreach (SamplePoint p in this.points)
+            foreach (SamplePoint p in points)
                 try
                 {                    
                     bmp.SetPixel(p.Index / bmp.Height, p.Index % bmp.Height,
-                        p.Cluster == 0 ? Automaton.toGrayLevel(p.Color) : p.Color);
+                        p.Cluster == 0 ? p.Color.toGrayLevel() : p.Color);
                 }
                 catch (ArgumentException ae)
                 {
@@ -415,7 +415,7 @@ namespace Segmentation
    
         public int CompareTo(ClusterDistance that) 
         {
-            if (this.distance < that.distance)
+            if (distance < that.distance)
                 return -1;
             else if (this.distance == that.distance)
                 return 0;
@@ -457,6 +457,6 @@ namespace Segmentation
         public override string ToString() => $"x{Index}: ({string.Join(", ", Values)})";        
    
         public static double distance(SamplePoint pa, SamplePoint pb) 
-            => Automaton.colorDistance(pa.Color, pb.Color);                                         
+            => pa.Color.Distance(pb.Color);                                         
     }   
 }
