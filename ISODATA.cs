@@ -1,29 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Drawing;
+using GrowCut.src.cfg;
 
 namespace Segmentation
 {
     class ISODATA : ISegmentAlgorithm
-    {
-        // инициализация параметров
-        ISODATA(int k, int minNumThres, 
-            float std_deviationThres, float minDistanceThres, int maxMergeNumsThres, int maxIters)
+    {             
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bmp"></param>
+        /// <param name="iters"></param>
+        public ISODATA(Bitmap bmp, int iters = 10)          
         {
-            nClusters = k;
-            this.minNumThres = minNumThres;
-            this.std_deviationThres = std_deviationThres;
-            this.minDistanceThres = minDistanceThres;
-            this.maxMergeNumsThres = maxMergeNumsThres;
-            this.maxIters = maxIters;
-        }
-        //
-        public ISODATA(Bitmap bmp, int iters = 10)
-            : this(2,1,1,4,1,iters)            
-        {            
+            cfg = new IsoDataConfig(@"..\..\src\cfg\IsoDataConfig.xml");            
+            cfg.Init();
+            cfg.nIters = iters;
             // получение признакового пространства
             points = new List<SamplePoint>();
             int minARGB = int.MaxValue,
@@ -45,11 +39,11 @@ namespace Segmentation
                         maxIdx = x * bmp.Height + y;
                     }
                 }            
-            if (points.Count < nClusters)
+            if (points.Count < cfg.nClusters)
                 throw new Exception("Размерность признакового пространства должна превосходить число кластеров");
             dimension = points.First().Size;
             // инициализация кластеров
-            groups = new Cluster[nClusters];
+            groups = new Cluster[cfg.nClusters];
             groups[0] = new Cluster(0, points[minIdx]);
             groups[1] = new Cluster(1, points[maxIdx]);
             //foreach (Cluster c in groups)
@@ -73,7 +67,7 @@ namespace Segmentation
         //
         public bool evolution()
         {
-            for (int nIters = 1; nIters <= this.maxIters; ++nIters)
+            for (int nIters = 1; nIters <= cfg.nIters; ++nIters)
             {
                 Console.WriteLine(string.Join(new string('-', 1 << 3),
                                               new string[] { "", $"Итерация #{nIters}", "" }));
@@ -87,9 +81,9 @@ namespace Segmentation
                 // шаг 3  
                 updateMeans();
                 //   
-                if (nIters == maxIters)
-                    minDistanceThres = 0.0f;   // обнуление компактности
-                else if (groups.GetLength(0) <= (this.nClusters / 2) || (nIters % 2 == 1 && groups.GetLength(0) < 2 * this.nClusters))
+                if (nIters == cfg.nIters)
+                    cfg.ClusterDistance = .0f;   // обнуление компактности
+                else if (groups.GetLength(0) <= (cfg.nClusters / 2) || (nIters % 2 == 1 && groups.GetLength(0) < 2 * cfg.nClusters))
                 {
                     // шаг 7
                     bool splitted = splitGroups();
@@ -100,9 +94,12 @@ namespace Segmentation
                 mergeGroups();                
             }
             Console.WriteLine($"{new string('-', 1 << 4)}SUCCESS{new string('-', 1 << 4)}");
-            assignGroups();   
+            assignGroups();
             //   
-            //printGroups(); 
+            //printGroups();
+            //            
+            cfg.Save(); 
+            //
             return true;
         }
         // определение соответствия точка-кластер
@@ -138,7 +135,7 @@ namespace Segmentation
             for (int i = 0; i < groups.GetLength(0); ++i) 
             {   
                 List<SamplePoint> groupPoints = mapGroup2Samples[i];   
-                if (groupPoints.Count >= minNumThres)    
+                if (groupPoints.Count >= cfg.ClusterMaxSz)    
                     eligibleGroups.Add(groups[i]);   
                 else 
                 {   
@@ -271,9 +268,9 @@ namespace Segmentation
                 //Console.WriteLine(sbuf);
    
                 bool flag = false;   
-                if (maxItem > std_deviationThres) 
+                if (maxItem > cfg.Deviation) 
                 {   
-                    if (groups.GetLength(0) <= this.nClusters / 2 || (groups[i].mDistance > totalMeanDistance && groupPoints.Count > 2 * minNumThres)) 
+                    if (groups.GetLength(0) <= cfg.nClusters / 2 || (groups[i].mDistance > totalMeanDistance && groupPoints.Count > 2 * cfg.ClusterMaxSz)) 
                     {   
                         //  
                         splitted = true;   
@@ -328,14 +325,14 @@ namespace Segmentation
                     Cluster jGroup = groups[j];   
                     double distance = SamplePoint.distance(iGroup.Center, jGroup.Center);   
                     //Console.WriteLine("From " + i + " to " + j + " distance " + distance);   
-                    if (distance < this.minDistanceThres) 
+                    if (distance < cfg.ClusterDistance) 
                     {   
                         ClusterDistance groupDistance = new ClusterDistance(i, j, distance);   
                         groupDistances.Add(groupDistance);   
                     }   
                 }   
             }   
-            int size = Math.Min(groupDistances.Count, this.maxMergeNumsThres);   
+            int size = Math.Min(groupDistances.Count, cfg.nMergeClusters);   
             if (size < 1)
                 return; 
             // шаг 11 - ранжирование D в порядке возрастания   
@@ -381,18 +378,13 @@ namespace Segmentation
                 groupList[i].Number = i;
             this.groups = new Cluster[groupList.Count];
             this.groups = groupList.ToArray();
-        }   
-	
+        }
+        //
+        IsoDataConfig cfg;
         int dimension;              // размерность вектора признаков        
         Cluster[] groups;           // набор кластеров
-        List<SamplePoint> points;   // выборка данных для кластеризации        
-        int nClusters;              // кол-во кластеров        
-        int minNumThres;            // порог сходимости, с которым сравнивается кол-во точек в кластере        
-        float std_deviationThres;   // параметр, характеризующий среднеквадратичное отклонение        
-        float minDistanceThres;     // параметр компактности кластеров        
-        int maxMergeNumsThres;      // максимальное количество пар центров кластеров, которые можно объединить        
-        double totalMeanDistance;
-        int maxIters;               // допустимое число циклов итерации
+        List<SamplePoint> points;   // выборка данных для кластеризации                        
+        double totalMeanDistance;        
     }
 
     class Cluster

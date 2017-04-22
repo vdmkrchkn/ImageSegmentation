@@ -54,9 +54,6 @@ namespace Segmentation
         // преобразование в изображение Bitmap
         public void convertBitmap(ref Bitmap bmp) { }
         //
-        public bool evolution()
-        {
-            return true;
-        }
+        public bool evolution() => true;        
     }
 }

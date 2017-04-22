@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<IsoDataConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <nClusters>2</nClusters>
+  <ClusterMaxSz>1</ClusterMaxSz>
+  <Deviation>1</Deviation>
+  <ClusterDistance>4</ClusterDistance>
+  <nMergeClusters>2</nMergeClusters>
+  <nIters>10</nIters>
+</IsoDataConfig>
