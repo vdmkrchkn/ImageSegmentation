@@ -214,7 +214,6 @@
             this.autoRadioButton.TabIndex = 0;
             this.autoRadioButton.Text = "Auto";
             this.autoRadioButton.UseVisualStyleBackColor = true;
-            this.autoRadioButton.CheckedChanged += new System.EventHandler(this.radioButton4_CheckedChanged);
             // 
             // activeRadioButton
             // 

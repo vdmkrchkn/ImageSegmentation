@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.IO;
 using System.Threading;
+using GrowCut.src.cfg;
 
 namespace Segmentation
 {
@@ -102,15 +103,29 @@ namespace Segmentation
                 return;
             }
             DoSegmentation = true;
-            SegmentAlgorithmClient algo = new SegmentAlgorithmClient(new Graph(bmp));
+            SegmentAlgorithmClient algo;
             if (activeRadioButton.Checked)
             {
-                algo.iSegAlgo = new Automaton(bmp);
+                Automaton automaton = new Automaton(bmp);
                 // интерактивная разметка
-                (algo.iSegAlgo as Automaton).userAction(segmentSeeds);
+                automaton.userAction(segmentSeeds);
+                algo = new SegmentAlgorithmClient(automaton);
             }
             else
-                algo.iSegAlgo = new ISODATA(bmp, (int)numericUpDown1.Value);            
+            {
+                IsoDataConfig cfg = new IsoDataConfig(@"..\src\cfg\IsoDataConfig.xml");
+                try
+                {
+                    cfg.Init();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Возникла ошибка инициализации конфига: {ex.Message}");
+                    return;
+                }                                
+                //cfg.nIters = (int)numericUpDown1.Value;
+                algo = new SegmentAlgorithmClient(new ISODATA(bmp, cfg));
+            }
             // Создание & запуск отдельного потока для эволюции
             calcThread = new Thread(threadFunc);
             calcThread.Start(algo);
@@ -183,11 +198,6 @@ namespace Segmentation
         private void button1_Click(object sender, EventArgs e)
         {
             DoSegmentation = false;
-        }
-
-        private void radioButton4_CheckedChanged(object sender, EventArgs e)
-        {
-            groupBox3.Visible = !groupBox3.Visible;
-        }       
+        }        
     }
 }

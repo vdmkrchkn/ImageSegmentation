@@ -20,14 +20,11 @@ namespace GrowCut.src.cfg
         }
         /// <summary>
         ///     Инициализация параметров из xml файла        
-        /// </summary>
-        /// <returns>успешно ли выполнен метод</returns>
-        public bool Init()
+        /// </summary>        
+        public void Init()
         {
-            Stream stream = null;
-            try
-            {
-                stream = new FileStream(_fileName, FileMode.Open);
+            using (Stream stream = new FileStream(_fileName, FileMode.Open))                
+            {                
                 XmlSerializer serializer = new XmlSerializer(typeof(IsoDataConfig));
                 IsoDataConfig settings = (IsoDataConfig)serializer.Deserialize(stream);
                 //
@@ -37,18 +34,7 @@ namespace GrowCut.src.cfg
                 ClusterDistance = settings.ClusterDistance;
                 nMergeClusters = settings.nMergeClusters;
                 nIters = settings.nIters;
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return false;
-            }
-            finally
-            {
-                if (stream != null) stream.Dispose();
-            }
-            //
-            return true;                    
+            }                
         }
         /// <summary>
         ///    Сохранение параметров в xml файл
