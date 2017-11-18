@@ -16,26 +16,46 @@ namespace GrowCut.src.cfg
         /// <param name="fileName">название файла конфигурации</param>
         public IsoDataConfig(string fileName)
         {
-            cfgFileName = fileName;
+            _fileName = fileName;
         }
         /// <summary>
-        ///     Инициализация параметров из xml файла
+        ///     Инициализация параметров из xml файла        
         /// </summary>
-        public void Init()
-        {            
-            using (Stream stream = new FileStream(cfgFileName, FileMode.Open))
+        /// <returns>успешно ли выполнен метод</returns>
+        public bool Init()
+        {
+            Stream stream = null;
+            try
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(IsoDataConfig));                
+                stream = new FileStream(_fileName, FileMode.Open);
+                XmlSerializer serializer = new XmlSerializer(typeof(IsoDataConfig));
                 IsoDataConfig settings = (IsoDataConfig)serializer.Deserialize(stream);
-                Console.WriteLine(settings.nIters);                
+                //
+                nClusters = settings.nClusters;
+                ClusterMaxSz = settings.ClusterMaxSz;
+                Deviation = settings.Deviation;
+                ClusterDistance = settings.ClusterDistance;
+                nMergeClusters = settings.nMergeClusters;
+                nIters = settings.nIters;
             }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return false;
+            }
+            finally
+            {
+                if (stream != null) stream.Dispose();
+            }
+            //
+            return true;                    
         }
         /// <summary>
         ///    Сохранение параметров в xml файл
         /// </summary>        
         public void Save()
         {
-            using (Stream writer = new FileStream(cfgFileName, FileMode.Create))
+            using (Stream writer = new FileStream(_fileName, FileMode.Create))
             {
                 XmlSerializer serializer = new XmlSerializer(typeof(IsoDataConfig));
                 serializer.Serialize(writer, this);
@@ -68,6 +88,6 @@ namespace GrowCut.src.cfg
         /// <summary>
         /// 
         /// </summary>
-        string cfgFileName;
+        string _fileName;
     }
 }
